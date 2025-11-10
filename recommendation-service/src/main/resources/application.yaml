@@ -1,0 +1,22 @@
+ktor:
+  deployment:
+    port: 8083
+    host: "0.0.0.0"
+
+  application:
+    modules:
+      - com.gnomeshift.recommendationservice.RecommendationServiceApplicationKt.module
+
+database:
+  url: "jdbc:postgresql://localhost:5432/ratecourse"
+  user: ""
+  password: ""
+
+kafka:
+  bootstrapServers: "localhost:9092"
+  groupId: "recommendation-service-group"
+  topic: "ratings"
+  autoOffsetReset: "earliest"
+
+service:
+  name: "RecommendationService"
