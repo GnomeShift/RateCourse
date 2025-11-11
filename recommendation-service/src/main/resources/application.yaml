@@ -1,6 +1,6 @@
 ktor:
   deployment:
-    port: 8083
+    port: ${RECOMMENDATION_PORT}
     host: "0.0.0.0"
 
   application:
@@ -8,9 +8,9 @@ ktor:
       - com.gnomeshift.recommendationservice.RecommendationServiceApplicationKt.module
 
 database:
-  url: "jdbc:postgresql://localhost:5432/ratecourse"
-  user: ""
-  password: ""
+  url: ${DB_URL}
+  user: ${DB_USER}
+  password: ${DB_PASSWORD}
 
 kafka:
   bootstrapServers: "localhost:9092"
@@ -19,4 +19,4 @@ kafka:
   autoOffsetReset: "earliest"
 
 service:
-  name: "RecommendationService"
+  name: "recommendation-service"

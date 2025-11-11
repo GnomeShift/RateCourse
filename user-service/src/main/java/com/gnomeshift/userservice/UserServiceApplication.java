@@ -7,7 +7,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class UserServiceApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(UserServiceApplication.class, args);
+        SpringApplication app = new SpringApplication(UserServiceApplication.class);
+        app.addInitializers(new DotenvPropertyInitializer());
+        app.run(args);
     }
 
 }
