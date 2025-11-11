@@ -32,6 +32,7 @@ dependencies {
     implementation("org.apache.kafka:kafka-clients")
     implementation("com.fasterxml.jackson.core:jackson-databind")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
+    implementation("io.github.cdimascio:dotenv-java:3.2.0")
     runtimeOnly("org.postgresql:postgresql")
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")
