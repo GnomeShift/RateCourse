@@ -2,6 +2,7 @@ package com.gnomeshift.recommendationservice.kafka
 
 import com.gnomeshift.recommendationservice.service.RecommendationService
 import com.gnomeshift.recommendationservice.dto.RatingEvent
+import io.ktor.server.application.ApplicationEnvironment
 import kotlinx.coroutines.delay
 import kotlinx.serialization.json.Json
 import org.apache.kafka.clients.consumer.ConsumerConfig
@@ -11,8 +12,9 @@ import org.slf4j.LoggerFactory
 import java.time.Duration
 import java.util.Properties
 
-class KafkaConsumerService(private val recommendationService: RecommendationService) {
+class KafkaConsumerService(private val recommendationService: RecommendationService, environment: ApplicationEnvironment) {
     private val logger = LoggerFactory.getLogger(KafkaConsumerService::class.java)
+    private val topic: String
     private val consumer: KafkaConsumer<String, String>
     private val json = Json {
         ignoreUnknownKeys = true
@@ -20,20 +22,21 @@ class KafkaConsumerService(private val recommendationService: RecommendationServ
     }
 
     init {
+        val config = environment.config
         val props = Properties().apply {
-            put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
-                System.getenv("KAFKA_BOOTSTRAP_SERVERS") ?: "localhost:9092")
-            put(ConsumerConfig.GROUP_ID_CONFIG, "recommendation-service-group")
+            put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, config.property("kafka.bootstrapServers").getString())
+            put(ConsumerConfig.GROUP_ID_CONFIG, config.property("kafka.groupId").getString())
             put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer::class.java.name)
             put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer::class.java.name)
-            put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
+            put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, config.property("kafka.autoOffsetReset").getString())
             put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "true")
             put(ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG, "1000")
         }
 
+        topic = config.property("kafka.topic").getString()
         consumer = KafkaConsumer(props)
-        consumer.subscribe(listOf("ratings"))
-        logger.info("Kafka consumer initialized and subscribed to 'ratings' topic")
+        consumer.subscribe(listOf(topic))
+        logger.info("Kafka consumer initialized and subscribed to '$topic' topic")
     }
 
     suspend fun startConsuming() {

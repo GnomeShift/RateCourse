@@ -10,7 +10,6 @@ import io.ktor.server.netty.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 
@@ -30,9 +29,9 @@ fun Application.module() {
     DatabaseFactory.init(environment)
 
     val recommendationService = RecommendationService()
-    val kafkaConsumer = KafkaConsumerService(recommendationService)
+    val kafkaConsumer = KafkaConsumerService(recommendationService, environment)
 
-    GlobalScope.launch {
+    launch {
         kafkaConsumer.startConsuming()
     }
 
