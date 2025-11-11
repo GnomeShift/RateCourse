@@ -1,0 +1,83 @@
+{
+    log {
+        output file /var/log/caddy/access.log
+        format json
+    }
+}
+
+:80 {
+    header {
+        Access-Control-Allow-Origin *
+        Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+        Access-Control-Allow-Headers "Content-Type, Authorization, X-User-Id"
+    }
+
+    handle /health {
+        respond "OK" 200
+    }
+
+    handle /api/users/* {
+        reverse_proxy user-service:8080 {
+            header_up Host {host}
+            header_up X-Real-IP {remote}
+            header_up X-Forwarded-For {remote}
+            header_up X-Forwarded-Proto {scheme}
+
+            transport http {
+                dial_timeout 10s
+                read_timeout 30s
+                write_timeout 30s
+            }
+        }
+    }
+
+    handle /api/courses/* {
+        reverse_proxy course-service:8081 {
+            header_up Host {host}
+            header_up X-Real-IP {remote}
+            header_up X-Forwarded-For {remote}
+            header_up X-Forwarded-Proto {scheme}
+
+            transport http {
+                dial_timeout 10s
+                read_timeout 30s
+                write_timeout 30s
+            }
+        }
+    }
+
+    handle /api/ratings/* {
+        reverse_proxy rating-service:8082 {
+            header_up Host {host}
+            header_up X-Real-IP {remote}
+            header_up X-Forwarded-For {remote}
+            header_up X-Forwarded-Proto {scheme}
+            header_up X-User-Id {header.X-User-Id}
+
+            transport http {
+                dial_timeout 10s
+                read_timeout 30s
+                write_timeout 30s
+            }
+        }
+    }
+
+    handle /api/recommendations/* {
+        reverse_proxy recommendation-service:8083 {
+            header_up Host {host}
+            header_up X-Real-IP {remote}
+            header_up X-Forwarded-For {remote}
+            header_up X-Forwarded-Proto {scheme}
+
+            transport http {
+                dial_timeout 10s
+                read_timeout 30s
+                write_timeout 30s
+            }
+        }
+    }
+
+    handle {
+        respond "Not Found" 404
+    }
+}
