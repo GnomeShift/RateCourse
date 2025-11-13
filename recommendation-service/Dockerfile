@@ -1,10 +1,10 @@
 FROM gradle:8.14-jdk21 AS builder
 WORKDIR /app
 COPY --chown=gradle:gradle . .
-RUN gradle :recommendation-service:shadowJar --no-daemon
+RUN gradle shadowJar --no-daemon
 
-FROM openjdk:21-jdk-slim
+FROM eclipse-temurin:21
 WORKDIR /app
-COPY --from=builder /app/recommendation-service/build/libs/*-all.jar app.jar
-EXPOSE 8084
+COPY --from=builder /app/build/libs/*-all.jar app.jar
+EXPOSE 8083
 ENTRYPOINT ["java", "-jar", "app.jar"]

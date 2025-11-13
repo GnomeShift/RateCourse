@@ -1,8 +1,8 @@
 services:
   caddy:
     image: caddy:latest
-    container_name: caddy
-    hostname: caddy
+    container_name: ratecourse-caddy
+    hostname: ratecourse-caddy
     restart: on-failure:3
     ports:
       - "0.0.0.0:443"
@@ -11,13 +11,13 @@ services:
       - ratecourse-network
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
-      - caddy-ssl-data:/data
+      - ratecourse-caddy-ssl-data:/data
 
 volumes:
-  caddy-ssl-data:
+  ratecourse-caddy-ssl-data:
     driver: local
     external: false
-    name: caddy-ssl-data
+    name: ratecourse-caddy-ssl-data
 
 networks:
   ratecourse-network:
