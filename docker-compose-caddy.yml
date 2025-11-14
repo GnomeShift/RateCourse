@@ -10,7 +10,7 @@ services:
     networks:
       - ratecourse-network
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
+      - ./Caddyfile-production:/etc/caddy/Caddyfile
       - ratecourse-caddy-ssl-data:/data
 
 volumes:
