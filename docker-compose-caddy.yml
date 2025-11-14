@@ -5,8 +5,8 @@ services:
     hostname: ratecourse-caddy
     restart: on-failure:3
     ports:
-      - "0.0.0.0:443"
-      - "0.0.0.0:80"
+      - "0.0.0.0:443:443"
+      - "0.0.0.0:80:80"
     networks:
       - ratecourse-network
     volumes:
