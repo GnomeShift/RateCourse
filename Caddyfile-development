@@ -20,8 +20,6 @@
         reverse_proxy user-service:8080 {
             header_up Host {host}
             header_up X-Real-IP {remote}
-            header_up X-Forwarded-For {remote}
-            header_up X-Forwarded-Proto {scheme}
 
             transport http {
                 dial_timeout 10s
@@ -35,8 +33,6 @@
         reverse_proxy course-service:8081 {
             header_up Host {host}
             header_up X-Real-IP {remote}
-            header_up X-Forwarded-For {remote}
-            header_up X-Forwarded-Proto {scheme}
 
             transport http {
                 dial_timeout 10s
@@ -50,8 +46,6 @@
         reverse_proxy rating-service:8082 {
             header_up Host {host}
             header_up X-Real-IP {remote}
-            header_up X-Forwarded-For {remote}
-            header_up X-Forwarded-Proto {scheme}
             header_up X-User-Id {header.X-User-Id}
 
             transport http {
@@ -66,8 +60,6 @@
         reverse_proxy recommendation-service:8083 {
             header_up Host {host}
             header_up X-Real-IP {remote}
-            header_up X-Forwarded-For {remote}
-            header_up X-Forwarded-Proto {scheme}
 
             transport http {
                 dial_timeout 10s
