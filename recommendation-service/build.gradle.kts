@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.gnomeshift"
-version = "1.0.0"
+version = "1.0.2"
 description = "RecommendationService"
 
 repositories {
@@ -40,5 +40,5 @@ dependencies {
 }
 
 application {
-    mainClass.set("com.gnomeshift.recommendation.RecommendationServiceApplicationKt")
+    mainClass.set("com.gnomeshift.recommendationservice.RecommendationServiceApplicationKt")
 }
