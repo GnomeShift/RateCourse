@@ -1,0 +1,156 @@
+services:
+  ratecourse-db:
+    image: postgres:18-alpine
+    container_name: ratecourse-db
+    env_file:
+      - .env.development-docker
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - ratecourse-db-data:/var/lib/postgresql/data
+    networks:
+      - ratecourse-network
+    healthcheck:
+      test: [ 'CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}' ]
+      interval: 3s
+      timeout: 10s
+      retries: 3
+    restart: on-failure:3
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    hostname: zookeeper
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - ratecourse-network
+    restart: on-failure:3
+
+  kafka:
+    image: confluentinc/cp-kafka:7.2.15
+    container_name: kafka
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    depends_on:
+      - zookeeper
+    networks:
+      - ratecourse-network
+    restart: on-failure:3
+
+  user-service:
+    build:
+      context: ./user-service
+      dockerfile: Dockerfile
+    container_name: user-service
+    env_file:
+      - .env.development-docker
+    ports:
+      - "8080:8080"
+    depends_on:
+      ratecourse-db:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: ${PROFILE}
+      SPRING_DATASOURCE_URL: ${DB_URL}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+    networks:
+      - ratecourse-network
+    restart: on-failure:3
+
+  course-service:
+    build:
+      context: ./course-service
+      dockerfile: Dockerfile
+    container_name: course-service
+    env_file:
+      - .env.development-docker
+    ports:
+      - "8081:8081"
+    depends_on:
+      ratecourse-db:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: ${PROFILE}
+      SPRING_DATASOURCE_URL: ${DB_URL}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+    networks:
+      - ratecourse-network
+    restart: on-failure:3
+
+  rating-service:
+    build:
+      context: ./rating-service
+      dockerfile: Dockerfile
+    container_name: rating-service
+    env_file:
+      - .env.development-docker
+    ports:
+      - "8082:8082"
+    depends_on:
+      ratecourse-db:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    environment:
+      SPRING_PROFILES_ACTIVE: ${PROFILE}
+      SPRING_DATASOURCE_URL: ${DB_URL}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    networks:
+      - ratecourse-network
+    restart: on-failure:3
+
+  recommendation-service:
+    build:
+      context: ./recommendation-service
+      dockerfile: Dockerfile
+    container_name: recommendation-service
+    env_file:
+      - .env.development-docker
+    ports:
+      - "8083:8083"
+    depends_on:
+      ratecourse-db:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    environment:
+      DATABASE_URL: ${DB_URL}
+      DATABASE_USER: ${DB_USER}
+      DATABASE_PASSWORD: ${DB_PASSWORD}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    networks:
+      - ratecourse-network
+    restart: on-failure:3
+
+volumes:
+  ratecourse-db-data:
+    driver: local
+    external: false
+    name: ratecourse-db-data
+
+networks:
+  ratecourse-network:
+    driver: bridge
+    external: false
+    name: ratecourse-network

@@ -40,5 +40,5 @@ dependencies {
 }
 
 application {
-    mainClass.set("com.gnomeshift.recommendation.RecommendationServiceApplicationKt")
+    mainClass.set("com.gnomeshift.recommendationservice.RecommendationServiceApplicationKt")
 }

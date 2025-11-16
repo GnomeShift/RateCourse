@@ -1,0 +1,144 @@
+{
+    email admin@example.com
+    acme_ca https://acme-v02.api.letsencrypt.org/directory
+
+    log {
+        output file /var/log/caddy/access.log {
+            roll_size 50mb
+            roll_keep 5
+            roll_keep_for 720h
+        }
+        format json
+        level INFO
+    }
+}
+
+http://api.example.com {
+    redir https://api.example.com{uri} permanent
+}
+
+https://api.example.com {
+    tls {
+        protocols tls1.3
+        ciphers TLS_AES_256_GCM_SHA384 TLS_CHACHA20_POLY1305_SHA256
+    }
+
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        X-XSS-Protection "1; mode=block"
+        -Server
+
+        Access-Control-Allow-Origin *
+        Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+        Access-Control-Allow-Headers "Content-Type, Authorization, X-User-Id"
+    }
+
+    rate_limit {
+        zone api_limit {
+            key {remote_host}
+            events 100
+            window 1m
+        }
+    }
+
+    handle /api/users/* {
+        @auth_endpoints {
+            path /api/users/login
+            path /api/users/register
+        }
+        rate_limit @auth_endpoints {remote_host} 10 1m
+
+        reverse_proxy user-service:8080 {
+            lb_policy least_conn
+            lb_retries 2
+
+            header_up Host {host}
+            header_up X-Real-IP {remote}
+        }
+    }
+
+    @courses_read {
+        method GET
+        path /api/courses/*
+    }
+
+    @courses_write {
+        method POST PUT DELETE
+        path /api/courses/*
+    }
+
+    handle @courses_read {
+        cache {
+            ttl 5m
+            key {uri}
+        }
+
+        reverse_proxy course-service:8081 {
+            lb_policy round_robin
+
+            header_up Host {host}
+            header_up X-Real-IP {remote}
+        }
+    }
+
+    handle @courses_write {
+        @has_auth {
+            header Authorization *
+        }
+        handle @has_auth {
+            reverse_proxy course-service:8081 {
+                header_up Host {host}
+                header_up X-Real-IP {remote}
+            }
+        }
+
+        handle {
+            respond "Unauthorized" 401
+        }
+    }
+
+    handle /api/ratings/* {
+        @has_auth {
+            header Authorization *
+        }
+
+        handle @has_auth {
+            reverse_proxy rating-service:8082 {
+                header_up Host {host}
+                header_up X-Real-IP {remote}
+                header_up X-User-Id {header.X-User-Id}
+            }
+        }
+
+        handle {
+            respond "Unauthorized" 401
+        }
+    }
+
+    handle /api/recommendations/* {
+        reverse_proxy recommendation-service:8083 {
+            lb_policy least_conn
+
+            header_up Host {host}
+            header_up X-Real-IP {remote}
+
+            transport http {
+                dial_timeout 10s
+                read_timeout 30s
+            }
+        }
+    }
+
+    @options {
+        method OPTIONS
+    }
+    handle @options {
+        respond "" 204
+    }
+
+    handle {
+        respond "Not Found" 404
+    }
+}
